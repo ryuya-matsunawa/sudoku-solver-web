@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "sudoku-backend"
+version = "0.1.0"
+description = ""
+authors = ["ryuya-matsunawa <ruymtnw@gmail.com>"]
+readme = "README.md"
+packages = [{include = "sudoku_backend"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.115.12"
+uvicorn = "^0.34.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
