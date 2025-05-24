@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+
+# Node.js (Next.js)
+node_modules/
+.next/
+.env.local
+dist/
+
+# Python (FastAPI)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+.env
+.venv/
+
+# VSCode
+.vscode/
+
+# Logs
+*.log
+
+# OS
+Thumbs.db
