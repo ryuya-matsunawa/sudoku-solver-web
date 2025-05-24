@@ -36,8 +36,12 @@ export default function Home() {
       }
       const data = await res.json()
       setSolution(data.solution)
-    } catch (err: any) {
-      setError(err.message || 'エラーが発生しました')
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError('エラーが発生しました')
+      }
     }
   }
 
