@@ -25,11 +25,12 @@ export default function Home() {
   const handleSolve = async (grid: number[][]) => {
     try {
       setError(null)
-      const res = await fetch('http://localhost:8000/api/solve', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/solve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ puzzle: grid }),
       })
+
       if (!res.ok) {
         const err = await res.json()
         throw new Error(err.detail || 'サーバーエラー')
