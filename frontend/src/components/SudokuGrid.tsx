@@ -38,9 +38,9 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
   const renderCell = (row: number, col: number) => {
     const isSelected = selectedCell?.[0] === row && selectedCell?.[1] === col
     const isSolutionCell =
-      solution && solution[row][col] !== 0 && grid[row][col] !== solution[row][col]
+      solution && grid[row][col] === 0 && solution[row][col] !== 0
 
-    const value = grid[row][col]
+    const displayValue = solution ? solution[row][col] : grid[row][col]
 
     return (
       <td
@@ -48,14 +48,21 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
         onClick={() => handleCellClick(row, col)}
         className={`w-12 h-12 border border-gray-300 cursor-pointer
           text-center text-lg align-middle select-none
-          ${isSelected ? 'bg-yellow-200' : 'bg-white'}
-          ${isSolutionCell ? 'text-green-600 font-bold' : 'text-black'}
+          ${
+            isSelected
+              ? 'bg-yellow-200'
+              : isSolutionCell
+                ? 'bg-green-200'
+                : 'bg-white'
+          }
+          text-black
           hover:bg-blue-100 transition`}
       >
-        {value !== 0 ? value : ''}
+        {displayValue !== 0 ? displayValue : ''}
       </td>
     )
   }
+
 
   return (
     <div className="flex flex-col items-center">
