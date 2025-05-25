@@ -21,6 +21,12 @@ app.add_middleware(
 class SudokuPuzzle(BaseModel):
     puzzle: List[List[int]]
 
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 @app.post("/api/solve")
 def solve_sudoku(data: SudokuPuzzle):
     puzzle = [row[:] for row in data.puzzle]
