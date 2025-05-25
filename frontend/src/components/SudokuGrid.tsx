@@ -37,10 +37,6 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
 
   const renderCell = (row: number, col: number) => {
     const isSelected = selectedCell?.[0] === row && selectedCell?.[1] === col
-    const isBoxBorder =
-      row % 3 === 0 || col % 3 === 0 || row === 8 || col === 8
-    const borderClass = isBoxBorder ? 'border' : ''
-
     const isSolutionCell =
       solution && solution[row][col] !== 0 && grid[row][col] !== solution[row][col]
 
