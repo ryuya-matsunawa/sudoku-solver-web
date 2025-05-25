@@ -52,17 +52,15 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
             isSelected
               ? 'bg-yellow-200'
               : isSolutionCell
-                ? 'bg-green-200'
-                : 'bg-white'
+              ? 'bg-green-200'
+              : 'bg-white'
           }
-          text-black
-          hover:bg-blue-100 transition`}
+          text-black hover:bg-blue-100 transition`}
       >
         {displayValue !== 0 ? displayValue : ''}
       </td>
     )
   }
-
 
   return (
     <div className="flex flex-col items-center">
@@ -83,9 +81,9 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
         {autoInputMode ? '自動入力モード：ON' : '自動入力モード：OFF'}
       </button>
 
-      {/* 数字選択ボタン */}
+      {/* 数字選択ボタン（0を×に） */}
       <div className="mb-4 flex gap-2 flex-wrap justify-center">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
           <button
             key={num}
             onClick={() => handleNumberInput(num)}
@@ -95,7 +93,7 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
                 : 'bg-gray-200'
             }`}
           >
-            {num}
+            {num === 0 ? '×' : num}
           </button>
         ))}
       </div>
