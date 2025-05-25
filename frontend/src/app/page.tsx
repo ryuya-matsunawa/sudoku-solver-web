@@ -22,18 +22,6 @@ export default function Home() {
     [0, 0, 0, 0, 8, 0, 0, 7, 9],
   ]
 
-  const applySample = () => {
-    setGrid(samplePuzzle.map((row) => [...row]))
-    setSolution(null)
-    setError(null)
-  }
-
-  const resetGrid = () => {
-    setGrid(Array.from({ length: 9 }, () => Array(9).fill(0)))
-    setSolution(null)
-    setError(null)
-  }
-
   const handleSolve = async (grid: number[][]) => {
     try {
       setError(null)
@@ -57,6 +45,17 @@ export default function Home() {
         setError('解答に失敗しました')
       }
     }
+  }
+
+  const applySample = () => {
+    setGrid(samplePuzzle.map((row) => [...row]))
+    setSolution(null)
+  }
+
+  const resetGrid = () => {
+    setGrid(Array.from({ length: 9 }, () => Array(9).fill(0)))
+    setSolution(null)
+    setError(null)
   }
 
   return (

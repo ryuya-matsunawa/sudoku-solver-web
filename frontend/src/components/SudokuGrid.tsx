@@ -40,15 +40,19 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
     const isSolutionCell =
       solution && solution[row][col] !== 0 && grid[row][col] !== solution[row][col]
 
+    const value = grid[row][col]
+
     return (
       <td
         key={`${row}-${col}`}
         onClick={() => handleCellClick(row, col)}
-        className={`w-8 h-8 text-center border border-gray-300 cursor-pointer ${
-          isSelected ? 'bg-yellow-200' : ''
-        } ${isSolutionCell ? 'text-green-600 font-bold' : ''}`}
+        className={`w-12 h-12 border border-gray-300 cursor-pointer
+          text-center text-lg align-middle select-none
+          ${isSelected ? 'bg-yellow-200' : 'bg-white'}
+          ${isSolutionCell ? 'text-green-600 font-bold' : 'text-black'}
+          hover:bg-blue-100 transition`}
       >
-        {grid[row][col] !== 0 ? grid[row][col] : ''}
+        {value !== 0 ? value : ''}
       </td>
     )
   }
@@ -57,25 +61,28 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
     <div className="flex flex-col items-center">
       {/* 自動入力モードトグル */}
       <button
-        className={`mb-2 px-4 py-1 rounded ${
+        className={`mb-2 px-4 py-1 rounded font-medium ${
           autoInputMode ? 'bg-blue-500 text-white' : 'bg-gray-300 text-black'
         }`}
         onClick={() => {
-          setAutoInputMode(!autoInputMode)
+          const newMode = !autoInputMode
+          setAutoInputMode(newMode)
           setSelectedCell(null)
-          setSelectedNumber(null)
+          if (!newMode) {
+            setSelectedNumber(null)
+          }
         }}
       >
         {autoInputMode ? '自動入力モード：ON' : '自動入力モード：OFF'}
       </button>
 
-      {/* 数字選択 */}
+      {/* 数字選択ボタン */}
       <div className="mb-4 flex gap-2 flex-wrap justify-center">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
           <button
             key={num}
             onClick={() => handleNumberInput(num)}
-            className={`w-8 h-8 rounded ${
+            className={`w-8 h-8 rounded text-black font-medium ${
               selectedNumber === num && autoInputMode
                 ? 'bg-blue-500 text-white'
                 : 'bg-gray-200'
@@ -99,7 +106,7 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
 
       {/* 解答ボタン */}
       <button
-        className="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+        className="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 font-semibold"
         onClick={() => onSolve(grid)}
       >
         解答
