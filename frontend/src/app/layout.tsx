@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "数独 自動解答ツール",
+  title: "数独（ナンプレ） 自動解答ツール",
   description: "自動解答付きの数独Webアプリ",
   other: {
     "google-site-verification": "U_pVrCK3QwIG1LPv4awT4Ym2YzWLWK5GsSiWbdhRKFE",
