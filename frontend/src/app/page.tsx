@@ -61,7 +61,7 @@ export default function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
       <h1 className="text-3xl font-bold mb-6 text-gray-900">
-        数独 自動解答ツール
+        数独（ナンプレ）自動解答ツール
       </h1>
 
       <div className="flex gap-4 mb-4">
