@@ -12,7 +12,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata = {
+export const metadata: Metadata = {
   title: '数独（ナンプレ）自動解答ツール - 手動入力で即解決',
   description: '数独（ナンプレ）の問題を手動で入力して、自動で解答を表示する無料Webアプリ。スマホ・PC対応、インストール不要ですぐ使えます。',
   keywords: ['数独', 'ナンプレ', '自動解答', 'Webアプリ', '無料', 'スマホ対応'],
