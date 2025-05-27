@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 type Props = {
   grid: number[][]
@@ -9,10 +9,115 @@ type Props = {
   solution: number[][] | null
 }
 
+type ConflictingCell = {
+  row: number
+  col: number
+  conflictsWith: Array<[number, number]>
+}
+
 export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) {
   const [selectedCell, setSelectedCell] = useState<[number, number] | null>(null)
   const [autoInputMode, setAutoInputMode] = useState<boolean>(false)
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null)
+  const [conflictingCells, setConflictingCells] = useState<ConflictingCell[]>([])
+
+  // 数独のルール違反を検出する関数
+  const detectConflicts = () => {
+    const conflicts: ConflictingCell[] = []
+    const conflictMap = new Map<string, ConflictingCell>()
+
+    // 行ごとのチェック
+    for (let row = 0; row < 9; row++) {
+      for (let col = 0; col < 9; col++) {
+        if (grid[row][col] === 0) continue
+
+        const cellKey = `${row}-${col}`
+        let currentConflict = conflictMap.get(cellKey) || {
+          row,
+          col,
+          conflictsWith: []
+        }
+
+        // 同じ行のチェック
+        for (let c = 0; c < 9; c++) {
+          if (c !== col && grid[row][col] === grid[row][c]) {
+            currentConflict.conflictsWith.push([row, c])
+
+            // 反対側のセルにも競合を記録
+            const otherCellKey = `${row}-${c}`
+            let otherConflict = conflictMap.get(otherCellKey) || {
+              row,
+              col: c,
+              conflictsWith: []
+            }
+            otherConflict.conflictsWith.push([row, col])
+            conflictMap.set(otherCellKey, otherConflict)
+          }
+        }
+
+        // 同じ列のチェック
+        for (let r = 0; r < 9; r++) {
+          if (r !== row && grid[row][col] === grid[r][col]) {
+            currentConflict.conflictsWith.push([r, col])
+
+            // 反対側のセルにも競合を記録
+            const otherCellKey = `${r}-${col}`
+            let otherConflict = conflictMap.get(otherCellKey) || {
+              row: r,
+              col,
+              conflictsWith: []
+            }
+            otherConflict.conflictsWith.push([row, col])
+            conflictMap.set(otherCellKey, otherConflict)
+          }
+        }
+
+        // 同じ3x3ブロック内のチェック
+        const blockRow = Math.floor(row / 3) * 3
+        const blockCol = Math.floor(col / 3) * 3
+
+        for (let r = blockRow; r < blockRow + 3; r++) {
+          for (let c = blockCol; c < blockCol + 3; c++) {
+            if ((r !== row || c !== col) && grid[row][col] === grid[r][c]) {
+              currentConflict.conflictsWith.push([r, c])
+
+              // 反対側のセルにも競合を記録
+              const otherCellKey = `${r}-${c}`
+              let otherConflict = conflictMap.get(otherCellKey) || {
+                row: r,
+                col: c,
+                conflictsWith: []
+              }
+              otherConflict.conflictsWith.push([row, col])
+              conflictMap.set(otherCellKey, otherConflict)
+            }
+          }
+        }
+
+        if (currentConflict.conflictsWith.length > 0) {
+          conflictMap.set(cellKey, currentConflict)
+        }
+      }
+    }
+
+    // Mapからリストに変換
+    const conflictList = Array.from(conflictMap.values());
+    setConflictingCells(conflictList)
+  }
+
+  // グリッドが変更されるたびにルール違反をチェック
+  useEffect(() => {
+    detectConflicts()
+  }, [grid])
+
+  // セルがコンフリクト状態かどうかを確認する関数
+  const isCellConflicting = (row: number, col: number): boolean => {
+    return conflictingCells.some(
+      conflict => (
+        conflict.row === row && conflict.col === col) ||
+        conflict.conflictsWith.some(([r, c]) => r === row && c === col)
+    )
+  }
 
   const handleCellClick = (row: number, col: number) => {
     if (autoInputMode && selectedNumber !== null) {
@@ -39,6 +144,7 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
     const isSelected = selectedCell?.[0] === row && selectedCell?.[1] === col
     const isSolutionCell =
       solution && grid[row][col] === 0 && solution[row][col] !== 0
+    const isConflicting = isCellConflicting(row, col)
 
     const displayValue = solution ? solution[row][col] : grid[row][col]
 
@@ -59,7 +165,10 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
         <div
           className={`
             w-10 aspect-square flex items-center justify-center text-lg select-none
-            ${isSelected ? 'bg-yellow-200' : isSolutionCell ? 'bg-green-200' : 'bg-white'}
+            ${isConflicting ? 'bg-red-400 font-bold' :
+               isSelected ? 'bg-yellow-200' :
+               isSolutionCell ? 'bg-green-200' : 'bg-white'
+            }
             text-black hover:bg-blue-100 transition
           `}
         >
@@ -140,8 +249,13 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
 
       {/* 解答ボタン */}
       <button
-        className="mt-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 font-semibold"
+        className={`mt-2 px-4 py-2 ${
+          conflictingCells.length > 0
+            ? 'bg-gray-400 cursor-not-allowed'
+            : 'bg-green-500 hover:bg-green-600'
+        } text-white rounded font-semibold`}
         onClick={() => onSolve(grid)}
+        disabled={conflictingCells.length > 0}
       >
         解答
       </button>

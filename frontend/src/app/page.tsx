@@ -73,6 +73,11 @@ export default function Home() {
         solution={solution}
       />
 
+      {/* エラー表示 */}
+      {error && (
+        <p className="mt-2 text-red-500 text-sm">{error}</p>
+      )}
+
       {/* サンプルとリセット */}
       <div className="flex gap-4 mt-6">
         <button
@@ -89,11 +94,6 @@ export default function Home() {
           リセット
         </button>
       </div>
-
-      {/* エラー表示 */}
-      {error && (
-        <p className="mt-2 text-red-500 text-sm">{error}</p>
-      )}
     </main>
   )
 }
