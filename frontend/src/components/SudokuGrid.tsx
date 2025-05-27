@@ -23,7 +23,6 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
 
   // 数独のルール違反を検出する関数
   const detectConflicts = () => {
-    const conflicts: ConflictingCell[] = []
     const conflictMap = new Map<string, ConflictingCell>()
 
     // 行ごとのチェック
@@ -32,7 +31,7 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
         if (grid[row][col] === 0) continue
 
         const cellKey = `${row}-${col}`
-        let currentConflict = conflictMap.get(cellKey) || {
+        const currentConflict = conflictMap.get(cellKey) || {
           row,
           col,
           conflictsWith: []
@@ -45,7 +44,7 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
 
             // 反対側のセルにも競合を記録
             const otherCellKey = `${row}-${c}`
-            let otherConflict = conflictMap.get(otherCellKey) || {
+            const otherConflict = conflictMap.get(otherCellKey) || {
               row,
               col: c,
               conflictsWith: []
@@ -62,7 +61,7 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
 
             // 反対側のセルにも競合を記録
             const otherCellKey = `${r}-${col}`
-            let otherConflict = conflictMap.get(otherCellKey) || {
+            const otherConflict = conflictMap.get(otherCellKey) || {
               row: r,
               col,
               conflictsWith: []
@@ -83,7 +82,7 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
 
               // 反対側のセルにも競合を記録
               const otherCellKey = `${r}-${c}`
-              let otherConflict = conflictMap.get(otherCellKey) || {
+              const otherConflict = conflictMap.get(otherCellKey) || {
                 row: r,
                 col: c,
                 conflictsWith: []
@@ -108,6 +107,7 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
   // グリッドが変更されるたびにルール違反をチェック
   useEffect(() => {
     detectConflicts()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [grid])
 
   // セルがコンフリクト状態かどうかを確認する関数
