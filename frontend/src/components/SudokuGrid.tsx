@@ -103,21 +103,39 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
         通常モードでは、マスを選んでから数字を入力してください。
       </p>
 
-      {/* 数字ボタン */}
-      <div className="mb-4 flex gap-2 justify-center flex-nowrap overflow-x-auto">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
-          <button
-            key={num}
-            onClick={() => handleNumberInput(num)}
-            className={`w-8 h-8 rounded text-black font-medium ${
-              selectedNumber === num && autoInputMode
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-200'
-            }`}
-          >
-            {num === 0 ? '×' : num}
-          </button>
-        ))}
+      {/* 数字ボタン（2行に分割） */}
+      <div className="mb-4 space-y-2">
+        <div className="flex gap-2 justify-center">
+          {[1, 2, 3, 4, 5].map((num) => (
+            <button
+              key={num}
+              onClick={() => handleNumberInput(num)}
+              className={`w-8 h-8 rounded text-black font-medium ${
+                selectedNumber === num && autoInputMode
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200'
+              }`}
+            >
+              {num}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex gap-2 justify-center">
+          {[6, 7, 8, 9, 0].map((num) => (
+            <button
+              key={num}
+              onClick={() => handleNumberInput(num)}
+              className={`w-8 h-8 rounded text-black font-medium ${
+                selectedNumber === num && autoInputMode
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200'
+              }`}
+            >
+              {num === 0 ? '×' : num}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 解答ボタン */}
