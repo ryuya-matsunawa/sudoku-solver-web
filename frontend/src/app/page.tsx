@@ -60,11 +60,21 @@ export default function Home() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+      {/* タイトル */}
       <h1 className="text-2xl font-bold mb-6 text-gray-900 whitespace-nowrap">
         数独（ナンプレ）自動解答ツール
       </h1>
 
-      <div className="flex gap-4 mb-4">
+      {/* 盤面＋操作UI */}
+      <SudokuGrid
+        grid={grid}
+        setGrid={setGrid}
+        onSolve={handleSolve}
+        solution={solution}
+      />
+
+      {/* サンプルとリセット */}
+      <div className="flex gap-4 mt-6">
         <button
           onClick={applySample}
           className="px-4 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
@@ -80,17 +90,9 @@ export default function Home() {
         </button>
       </div>
 
-      <SudokuGrid
-        grid={grid}
-        setGrid={setGrid}
-        onSolve={handleSolve}
-        solution={solution}
-      />
-
+      {/* エラー表示 */}
       {error && (
-        <p className="mt-2 text-red-500 text-sm">
-          {error}
-        </p>
+        <p className="mt-2 text-red-500 text-sm">{error}</p>
       )}
     </main>
   )

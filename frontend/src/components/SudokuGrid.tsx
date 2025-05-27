@@ -50,7 +50,6 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
       ${col === 8 ? 'border-r-2' : ''}
     `
 
-
     return (
       <td
         key={`${row}-${col}`}
@@ -72,24 +71,39 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
 
   return (
     <div className="flex flex-col items-center">
-      {/* 自動入力モードトグル */}
+      {/* 数独盤面 */}
+      <table className="border-collapse mb-4">
+        <tbody>
+          {grid.map((row, rowIndex) => (
+            <tr key={rowIndex}>
+              {row.map((_, colIndex) => renderCell(rowIndex, colIndex))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* 自動入力モード切替 */}
       <button
-        className={`mb-2 px-4 py-1 rounded font-medium ${
+        className={`mb-1 px-4 py-1 rounded font-medium ${
           autoInputMode ? 'bg-blue-500 text-white' : 'bg-gray-300 text-black'
         }`}
         onClick={() => {
           const newMode = !autoInputMode
           setAutoInputMode(newMode)
           setSelectedCell(null)
-          if (!newMode) {
-            setSelectedNumber(null)
-          }
+          if (!newMode) setSelectedNumber(null)
         }}
       >
         {autoInputMode ? '自動入力モード：ON' : '自動入力モード：OFF'}
       </button>
 
-      {/* 数字選択ボタン（0を×に） */}
+      {/* 自動入力モードの説明 */}
+      <p className="text-sm text-gray-600 mb-2 max-w-sm text-center">
+        自動入力モードでは、数字を選んでからマスをクリックするとその数字が入力されます。
+        通常モードでは、マスを選んでから数字を入力してください。
+      </p>
+
+      {/* 数字ボタン */}
       <div className="mb-4 flex gap-2 justify-center flex-nowrap overflow-x-auto">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
           <button
@@ -106,20 +120,9 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
         ))}
       </div>
 
-      {/* 数独盤面 */}
-      <table className="border-collapse">
-        <tbody>
-          {grid.map((row, rowIndex) => (
-            <tr key={rowIndex}>
-              {row.map((_, colIndex) => renderCell(rowIndex, colIndex))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
       {/* 解答ボタン */}
       <button
-        className="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 font-semibold"
+        className="mt-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 font-semibold"
         onClick={() => onSolve(grid)}
       >
         解答
