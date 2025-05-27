@@ -60,7 +60,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900">
+      <h1 className="text-2xl font-bold mb-6 text-gray-900 whitespace-nowrap">
         数独（ナンプレ）自動解答ツール
       </h1>
 

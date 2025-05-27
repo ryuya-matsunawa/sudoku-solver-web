@@ -42,22 +42,30 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
 
     const displayValue = solution ? solution[row][col] : grid[row][col]
 
+    const borderClass = `
+      border border-gray-300
+      ${row % 3 === 0 ? 'border-t-2' : ''}
+      ${col % 3 === 0 ? 'border-l-2' : ''}
+      ${row === 8 ? 'border-b-2' : ''}
+      ${col === 8 ? 'border-r-2' : ''}
+    `
+
+
     return (
       <td
         key={`${row}-${col}`}
         onClick={() => handleCellClick(row, col)}
-        className={`w-12 h-12 border border-gray-300 cursor-pointer
-          text-center text-lg align-middle select-none
-          ${
-            isSelected
-              ? 'bg-yellow-200'
-              : isSolutionCell
-              ? 'bg-green-200'
-              : 'bg-white'
-          }
-          text-black hover:bg-blue-100 transition`}
+        className={`p-0 align-top cursor-pointer ${borderClass}`}
       >
-        {displayValue !== 0 ? displayValue : ''}
+        <div
+          className={`
+            w-10 aspect-square flex items-center justify-center text-lg select-none
+            ${isSelected ? 'bg-yellow-200' : isSolutionCell ? 'bg-green-200' : 'bg-white'}
+            text-black hover:bg-blue-100 transition
+          `}
+        >
+          {displayValue !== 0 ? displayValue : ''}
+        </div>
       </td>
     )
   }
@@ -82,7 +90,7 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
       </button>
 
       {/* 数字選択ボタン（0を×に） */}
-      <div className="mb-4 flex gap-2 flex-wrap justify-center">
+      <div className="mb-4 flex gap-2 justify-center flex-nowrap overflow-x-auto">
         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((num) => (
           <button
             key={num}
