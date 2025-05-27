@@ -43,7 +43,7 @@ export default function SudokuGrid({ grid, setGrid, onSolve, solution }: Props) 
     const displayValue = solution ? solution[row][col] : grid[row][col]
 
     const borderClass = `
-      border border-gray-300
+      border border-gray-600
       ${row % 3 === 0 ? 'border-t-2' : ''}
       ${col % 3 === 0 ? 'border-l-2' : ''}
       ${row === 8 ? 'border-b-2' : ''}
