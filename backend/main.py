@@ -205,7 +205,6 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
                 # ノイズを除去するためのモルフォロジー演算
                 kernel = np.ones((2, 2), np.uint8)
                 cell_thresh = cv2.morphologyEx(cell_thresh, cv2.MORPH_OPEN, kernel)
-                cell_thresh = cv2.morphologyEx(cell_thresh, cv2.MORPH_OPEN, kernel)
 
                 # リサイズ前に余白を追加する（OCR精度向上のため）
                 padding_before_resize = 8  # リサイズ前の余白サイズ
