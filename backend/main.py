@@ -6,6 +6,20 @@ import cv2
 import numpy as np
 import pytesseract
 from PIL import Image
+import logging
+import os
+import time
+
+# ロギングの設定
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler(os.path.join(os.path.dirname(__file__), 'sudoku_extractor.log'))
+    ]
+)
+logger = logging.getLogger("sudoku-extractor")
 
 app = FastAPI()
 
@@ -101,36 +115,49 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
     """
     数独の画像から9x9のグリッドを抽出するエンドポイント
     """
+    start_time = time.time()
+    logger.info(f"数独画像抽出処理開始: ファイル名={file.filename}")
+
     try:
         # 画像の読み込み
+        logger.info("ステップ1: 画像の読み込み開始")
         contents = await file.read()
         nparr = np.frombuffer(contents, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
         if img is None:
+            logger.error("画像の読み込みに失敗しました")
             raise HTTPException(status_code=400, detail="画像の読み込みに失敗しました")
 
+        logger.info(f"画像サイズ: {img.shape}, 画像タイプ: {img.dtype}")
+
         # グレースケールに変換
+        logger.info("ステップ2: グレースケール変換")
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
         # ぼかしを適用してノイズを減らす
+        logger.info("ステップ3: ガウスぼかし適用")
         blur = cv2.GaussianBlur(gray, (5, 5), 0)
 
         # 適応的閾値処理を適用して2値化
+        logger.info("ステップ4: 適応的閾値処理で2値化")
         thresh = cv2.adaptiveThreshold(
             blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2
         )
 
         # 輪郭を検出
+        logger.info("ステップ5: 輪郭検出")
         contours, _ = cv2.findContours(
             thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
         )
 
         # 輪郭を描画した画像を作成
+        logger.info("ステップ6: 検出した輪郭を可視化")
         contour_img = img.copy()
         cv2.drawContours(contour_img, contours, -1, (0, 255, 0), 3)
 
         # 最大の輪郭を見つける（数独グリッド全体）
+        logger.info("ステップ7: 最大輪郭の検索（数独グリッド全体）")
         max_area = 0
         biggest_contour = None
 
@@ -145,6 +172,7 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
         cv2.drawContours(max_contour_img, [biggest_contour], 0, (0, 0, 255), 3)
 
         if biggest_contour is None:
+            logger.error("数独グリッドを検出できませんでした")
             raise HTTPException(
                 status_code=400, detail="数独グリッドを検出できませんでした"
             )
@@ -352,9 +380,14 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
         # 結果を返す
         result = {"puzzle": sudoku_grid}
 
+        # 処理時間をログに記録
+        process_time = time.time() - start_time
+        logger.info(f"数独画像抽出処理完了: 処理時間={process_time:.2f}秒")
+
         return result
 
     except Exception as e:
+        logger.error(f"画像処理中にエラーが発生しました: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500, detail=f"画像処理中にエラーが発生しました: {str(e)}"
         )
