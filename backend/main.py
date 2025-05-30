@@ -1,3 +1,4 @@
+import difflib
 from fastapi import FastAPI, HTTPException, File, UploadFile
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,11 +14,13 @@ import time
 # ロギングの設定
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler(os.path.join(os.path.dirname(__file__), 'sudoku_extractor.log'))
-    ]
+        logging.FileHandler(
+            os.path.join(os.path.dirname(__file__), "sudoku_extractor.log")
+        ),
+    ],
 )
 logger = logging.getLogger("sudoku-extractor")
 
@@ -128,8 +131,6 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
         if img is None:
             logger.error("画像の読み込みに失敗しました")
             raise HTTPException(status_code=400, detail="画像の読み込みに失敗しました")
-
-        logger.info(f"画像サイズ: {img.shape}, 画像タイプ: {img.dtype}")
 
         # グレースケールに変換
         logger.info("ステップ2: グレースケール変換")
@@ -298,7 +299,6 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
                 # 空のセルはスキップ（白ピクセルの割合が少ない場合は空と見なす）
                 if white_pixel_ratio < 0.01:
                     sudoku_grid[i][j] = 0
-                    white_cnt += 1
                     continue
 
                 # セルを少しだけ膨張させて数字を太くする（OCR精度向上のため）
@@ -335,19 +335,13 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
                         # 再OCR psm=13: 数字の行認識、oem=3: LSTMニューラルネットワーク
                         result = pytesseract.image_to_string(
                             enhanced_pil,
-                            config="--psm 13 --oem 3 -c tessedit_char_whitelist=123456789",
+                            config="--psm 10 --oem 3 -c tessedit_char_whitelist=123456789",
                         ).strip()
 
                     if result:
-                        # 文字列から直接数値に変換
-                        try:
-                            digit = int(result[0])
-                            if digit >= 1 and digit <= 9:
-                                sudoku_grid[i][j] = digit
-                            else:
-                                sudoku_grid[i][j] = 0
-                        except ValueError:
-                            sudoku_grid[i][j] = 0
+                        # closest_digit関数を使用して最も近い数字を取得
+                        recognized_digit = closest_digit(result[0])
+                        sudoku_grid[i][j] = recognized_digit
                     else:
                         sudoku_grid[i][j] = 0
                 except Exception as e:
@@ -395,6 +389,15 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
         raise HTTPException(
             status_code=500, detail=f"画像処理中にエラーが発生しました: {str(e)}"
         )
+
+
+def closest_digit(text: str) -> int:
+    """
+    文字列を入力として受け取り、最も近い数字（1-9）を返します
+    """
+    digits = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+    matches = difflib.get_close_matches(text, digits, n=1, cutoff=0.0)
+    return int(matches[0]) if matches else 0
 
 
 # OCR用前処理：リサイズ＋中央寄せ＋パディング付きのキャンバスに配置
