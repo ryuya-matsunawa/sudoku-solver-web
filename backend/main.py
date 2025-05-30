@@ -5,10 +5,7 @@ from typing import List
 
 app = FastAPI()
 
-origins = [
-    "https://sudoku-solver-web-kkne.vercel.app",
-    "http://localhost:3000"
-]
+origins = ["https://sudoku-solver-web-kkne.vercel.app", "http://localhost:3000"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -17,6 +14,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 class SudokuPuzzle(BaseModel):
     puzzle: List[List[int]]
@@ -33,13 +31,20 @@ def solve_sudoku(data: SudokuPuzzle):
 
     # まず、パズルが有効かどうかを確認
     if not is_valid_puzzle(puzzle):
-        raise HTTPException(status_code=400, detail="無効な数独パズルです。既に配置されている数字がルールに違反しています。")
+        raise HTTPException(
+            status_code=400,
+            detail="無効な数独パズルです。既に配置されている数字がルールに違反しています。",
+        )
 
     # 解けるかどうか試行
     if solve(puzzle):
         return {"solution": puzzle}
     else:
-        raise HTTPException(status_code=400, detail="解答が見つかりませんでした。このパズルは解けません。")
+        raise HTTPException(
+            status_code=400,
+            detail="解答が見つかりませんでした。このパズルは解けません。",
+        )
+
 
 # --- 解答ロジック（バックトラッキング） ---
 def is_valid(grid, row, col, num):
@@ -52,6 +57,7 @@ def is_valid(grid, row, col, num):
             if grid[start_row + i][start_col + j] == num:
                 return False
     return True
+
 
 # 数独パズルが有効かどうかを確認する関数
 def is_valid_puzzle(grid):
@@ -70,6 +76,7 @@ def is_valid_puzzle(grid):
                 # 元に戻す
                 grid[row][col] = num
     return True
+
 
 def solve(grid):
     for row in range(9):
