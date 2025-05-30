@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import SudokuGrid from '@/components/SudokuGrid'
+import ImageUploader from '@/components/ImageUploader'
 
 export default function Home() {
   const [grid, setGrid] = useState<number[][]>(
@@ -58,12 +59,25 @@ export default function Home() {
     setError(null)
   }
 
+  // 画像から抽出された数独パズルを設定する関数
+  const handlePuzzleExtracted = (extractedPuzzle: number[][]) => {
+    setGrid(extractedPuzzle)
+    setSolution(null)
+    setError(null)
+  }
+
   return (
     <main className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
       {/* タイトル */}
       <h1 className="text-2xl font-bold mb-6 text-gray-900 whitespace-nowrap">
         数独（ナンプレ）自動解答ツール
       </h1>
+
+      {/* 画像アップローダー */}
+      <ImageUploader
+        onPuzzleExtracted={handlePuzzleExtracted}
+        setError={setError}
+      />
 
       {/* 盤面＋操作UI */}
       <SudokuGrid
