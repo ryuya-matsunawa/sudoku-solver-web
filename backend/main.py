@@ -9,10 +9,7 @@ from PIL import Image
 
 app = FastAPI()
 
-origins = [
-    "https://sudoku-solver-web-kkne.vercel.app",
-    "http://localhost:3000"
-]
+origins = ["https://sudoku-solver-web-kkne.vercel.app", "http://localhost:3000"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -21,6 +18,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 class SudokuPuzzle(BaseModel):
     puzzle: List[List[int]]
@@ -37,13 +35,20 @@ def solve_sudoku(data: SudokuPuzzle):
 
     # まず、パズルが有効かどうかを確認
     if not is_valid_puzzle(puzzle):
-        raise HTTPException(status_code=400, detail="無効な数独パズルです。既に配置されている数字がルールに違反しています。")
+        raise HTTPException(
+            status_code=400,
+            detail="無効な数独パズルです。既に配置されている数字がルールに違反しています。",
+        )
 
     # 解けるかどうか試行
     if solve(puzzle):
         return {"solution": puzzle}
     else:
-        raise HTTPException(status_code=400, detail="解答が見つかりませんでした。このパズルは解けません。")
+        raise HTTPException(
+            status_code=400,
+            detail="解答が見つかりませんでした。このパズルは解けません。",
+        )
+
 
 # --- 解答ロジック（バックトラッキング） ---
 def is_valid(grid, row, col, num):
@@ -56,6 +61,7 @@ def is_valid(grid, row, col, num):
             if grid[start_row + i][start_col + j] == num:
                 return False
     return True
+
 
 # 数独パズルが有効かどうかを確認する関数
 def is_valid_puzzle(grid):
@@ -75,6 +81,7 @@ def is_valid_puzzle(grid):
                 grid[row][col] = num
     return True
 
+
 def solve(grid):
     for row in range(9):
         for col in range(9):
@@ -87,6 +94,7 @@ def solve(grid):
                         grid[row][col] = 0
                 return False
     return True
+
 
 @app.post("/api/extract-sudoku")
 async def extract_sudoku_from_image(file: UploadFile = File(...)):
@@ -109,11 +117,14 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
         blur = cv2.GaussianBlur(gray, (5, 5), 0)
 
         # 適応的閾値処理を適用して2値化
-        thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                       cv2.THRESH_BINARY_INV, 11, 2)
+        thresh = cv2.adaptiveThreshold(
+            blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2
+        )
 
         # 輪郭を検出
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
 
         # 輪郭を描画した画像を作成
         contour_img = img.copy()
@@ -134,7 +145,9 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
         cv2.drawContours(max_contour_img, [biggest_contour], 0, (0, 0, 255), 3)
 
         if biggest_contour is None:
-            raise HTTPException(status_code=400, detail="数独グリッドを検出できませんでした")
+            raise HTTPException(
+                status_code=400, detail="数独グリッドを検出できませんでした"
+            )
 
         # 近似多角形を取得
         peri = cv2.arcLength(biggest_contour, True)
@@ -142,7 +155,10 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
 
         # 4つの頂点が見つからない場合はエラー
         if len(approx) != 4:
-            raise HTTPException(status_code=400, detail=f"数独グリッドの4つの角を正しく検出できませんでした（検出された頂点数: {len(approx)}）")
+            raise HTTPException(
+                status_code=400,
+                detail=f"数独グリッドの4つの角を正しく検出できませんでした（検出された頂点数: {len(approx)}）",
+            )
 
         # 角点を可視化
         corner_img = img.copy()
@@ -185,7 +201,9 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
             for j in range(9):
                 cell_x = j * cell_width
                 cell_y = i * cell_height
-                cell = warped[cell_y:cell_y + cell_height, cell_x:cell_x + cell_width]
+                cell = warped[
+                    cell_y : cell_y + cell_height, cell_x : cell_x + cell_width
+                ]
 
                 # パディングの相対値による調整
                 padding_ratio = 0.1
@@ -193,13 +211,15 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
                 padding_y = int(cell_height * padding_ratio)
 
                 cell = cell[
-                    max(0, padding_y):max(0, cell_height - padding_y),
-                    max(0, padding_x):max(0, cell_width - padding_x)
+                    max(0, padding_y) : max(0, cell_height - padding_y),
+                    max(0, padding_x) : max(0, cell_width - padding_x),
                 ]
                 # cell = cv2.convertScaleAbs(cell, alpha=1.5, beta=30)
 
                 # しきい値処理を改善（OTSUアルゴリズム）
-                _, cell_thresh = cv2.threshold(cell, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+                _, cell_thresh = cv2.threshold(
+                    cell, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+                )
 
                 # ノイズを除去するためのモルフォロジー演算
                 kernel = np.ones((2, 2), np.uint8)
@@ -209,26 +229,40 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
                 padding_before_resize = 8  # リサイズ前の余白サイズ
                 cell_thresh_padded = cv2.copyMakeBorder(
                     cell_thresh,
-                    padding_before_resize, padding_before_resize, padding_before_resize, padding_before_resize,
+                    padding_before_resize,
+                    padding_before_resize,
+                    padding_before_resize,
+                    padding_before_resize,
                     cv2.BORDER_CONSTANT,
-                    value=0  # 黒色
+                    value=0,  # 黒色
                 )
 
                 # リサイズして画像を大きくする（OCR精度向上のため）
-                cell_thresh_resized = cv2.resize(cell_thresh_padded, (0, 0), fx=1.5, fy=1.5, interpolation=cv2.INTER_CUBIC)
+                cell_thresh_resized = cv2.resize(
+                    cell_thresh_padded,
+                    (0, 0),
+                    fx=1.5,
+                    fy=1.5,
+                    interpolation=cv2.INTER_CUBIC,
+                )
 
                 # リサイズ後にさらに余白を追加
                 padding_after_resize = 12  # リサイズ後の余白サイズ
                 cell_thresh_resized = cv2.copyMakeBorder(
                     cell_thresh_resized,
-                    padding_after_resize, padding_after_resize, padding_after_resize, padding_after_resize,
+                    padding_after_resize,
+                    padding_after_resize,
+                    padding_after_resize,
+                    padding_after_resize,
                     cv2.BORDER_CONSTANT,
-                    value=0  # 黒色
+                    value=0,  # 黒色
                 )
 
                 # 白ピクセルの割合を計算
                 white_pixel_count = cv2.countNonZero(cell_thresh_resized)
-                total_pixels = cell_thresh_resized.shape[0] * cell_thresh_resized.shape[1]
+                total_pixels = (
+                    cell_thresh_resized.shape[0] * cell_thresh_resized.shape[1]
+                )
                 white_pixel_ratio = white_pixel_count / total_pixels
 
                 # 空のセルはスキップ（白ピクセルの割合が少ない場合は空と見なす）
@@ -238,16 +272,23 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
 
                 # セルを少しだけ膨張させて数字を太くする（OCR精度向上のため）
                 dilation_kernel = np.ones((2, 2), np.uint8)
-                cell_thresh_dilated = cv2.dilate(cell_thresh_resized, dilation_kernel, iterations=1)
+                cell_thresh_dilated = cv2.dilate(
+                    cell_thresh_resized, dilation_kernel, iterations=1
+                )
 
                 # テキスト認識のための前処理
-                ocr_ready = prepare_ocr_image(cell_thresh_dilated, target_size=(100, 100), scale=1.5)
+                ocr_ready = prepare_ocr_image(
+                    cell_thresh_dilated, target_size=(100, 100), scale=1.5
+                )
                 cell_pil = Image.fromarray(ocr_ready)
 
                 # OCRを適用（設定を最適化）
                 try:
                     # psm=10: 1文字のみ認識、oem=3: LSTMニューラルネットワーク
-                    result = pytesseract.image_to_string(cell_pil, config='--psm 10 --oem 3 -c tessedit_char_whitelist=123456789')
+                    result = pytesseract.image_to_string(
+                        cell_pil,
+                        config="--psm 10 --oem 3 -c tessedit_char_whitelist=123456789",
+                    )
 
                     # 結果をクリーンアップ
                     result = result.strip()
@@ -255,13 +296,15 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
                     if not result:
                         # OCR結果が空の場合、画像を強調して再OCR
                         enhanced = cv2.convertScaleAbs(ocr_ready, alpha=1.8, beta=30)
-                        enhanced = cv2.GaussianBlur(enhanced, (3, 3), 0)  # 軽くノイズ除去
+                        enhanced = cv2.GaussianBlur(
+                            enhanced, (3, 3), 0
+                        )  # 軽くノイズ除去
                         enhanced_pil = Image.fromarray(enhanced)
 
                         # 再OCR psm=13: 数字の行認識、oem=3: LSTMニューラルネットワーク
                         result = pytesseract.image_to_string(
                             enhanced_pil,
-                            config='--psm 13 --oem 3 -c tessedit_char_whitelist=123456789'
+                            config="--psm 13 --oem 3 -c tessedit_char_whitelist=123456789",
                         ).strip()
 
                     if result:
@@ -303,7 +346,7 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
                         font,
                         1.5,
                         (0, 0, 0),
-                        2
+                        2,
                     )
 
         # 結果を返す
@@ -312,13 +355,17 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
         return result
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"画像処理中にエラーが発生しました: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"画像処理中にエラーが発生しました: {str(e)}"
+        )
 
 
 # OCR用前処理：リサイズ＋中央寄せ＋パディング付きのキャンバスに配置
 def prepare_ocr_image(image, target_size=(100, 100), scale=3.0):
     # リサイズ（拡大）
-    resized = cv2.resize(image, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+    resized = cv2.resize(
+        image, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC
+    )
 
     # 中央寄せキャンバス作成
     h, w = resized.shape[:2]
@@ -331,5 +378,5 @@ def prepare_ocr_image(image, target_size=(100, 100), scale=3.0):
         resized = cv2.resize(resized, target_size, interpolation=cv2.INTER_AREA)
         return resized
 
-    canvas[y_offset:y_offset + h, x_offset:x_offset + w] = resized
+    canvas[y_offset : y_offset + h, x_offset : x_offset + w] = resized
     return canvas
