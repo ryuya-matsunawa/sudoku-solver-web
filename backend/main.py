@@ -224,6 +224,8 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
         # 数独グリッドを格納する2次元配列
         sudoku_grid = [[0 for _ in range(9)] for _ in range(9)]
 
+        white_cnt = 0
+
         # 各セルを処理
         for i in range(9):
             for j in range(9):
@@ -296,6 +298,7 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
                 # 空のセルはスキップ（白ピクセルの割合が少ない場合は空と見なす）
                 if white_pixel_ratio < 0.01:
                     sudoku_grid[i][j] = 0
+                    white_cnt += 1
                     continue
 
                 # セルを少しだけ膨張させて数字を太くする（OCR精度向上のため）
@@ -350,6 +353,7 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
                 except Exception as e:
                     sudoku_grid[i][j] = 0
 
+        logger.info(f"空のセル数: {white_cnt} / 81")
         # 最終的な認識結果の視覚化
         final_grid = np.zeros((450, 450, 3), dtype=np.uint8)
         final_grid.fill(255)  # 白い背景
