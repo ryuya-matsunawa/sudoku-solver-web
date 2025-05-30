@@ -93,7 +93,6 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
     """
     数独の画像から9x9のグリッドを抽出するエンドポイント
     """
-    print("Received file:", file.filename)
     try:
         # 画像の読み込み
         contents = await file.read()
