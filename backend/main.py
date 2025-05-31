@@ -299,6 +299,7 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
                 # 空のセルはスキップ（白ピクセルの割合が少ない場合は空と見なす）
                 if white_pixel_ratio < 0.01:
                     sudoku_grid[i][j] = 0
+                    white_cnt += 1
                     continue
 
                 # セルを少しだけ膨張させて数字を太くする（OCR精度向上のため）
