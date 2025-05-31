@@ -1,3 +1,4 @@
+import difflib
 from fastapi import FastAPI, HTTPException, File, UploadFile
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,6 +7,22 @@ import cv2
 import numpy as np
 import pytesseract
 from PIL import Image
+import logging
+import os
+import time
+
+# ロギングの設定
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler(
+            os.path.join(os.path.dirname(__file__), "sudoku_extractor.log")
+        ),
+    ],
+)
+logger = logging.getLogger("sudoku-extractor")
 
 app = FastAPI()
 
@@ -101,36 +118,47 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
     """
     数独の画像から9x9のグリッドを抽出するエンドポイント
     """
+    start_time = time.time()
+    logger.info(f"数独画像抽出処理開始: ファイル名={file.filename}")
+
     try:
         # 画像の読み込み
+        logger.info("ステップ1: 画像の読み込み開始")
         contents = await file.read()
         nparr = np.frombuffer(contents, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
         if img is None:
+            logger.error("画像の読み込みに失敗しました")
             raise HTTPException(status_code=400, detail="画像の読み込みに失敗しました")
 
         # グレースケールに変換
+        logger.info("ステップ2: グレースケール変換")
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
         # ぼかしを適用してノイズを減らす
+        logger.info("ステップ3: ガウスぼかし適用")
         blur = cv2.GaussianBlur(gray, (5, 5), 0)
 
         # 適応的閾値処理を適用して2値化
+        logger.info("ステップ4: 適応的閾値処理で2値化")
         thresh = cv2.adaptiveThreshold(
             blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2
         )
 
         # 輪郭を検出
+        logger.info("ステップ5: 輪郭検出")
         contours, _ = cv2.findContours(
             thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
         )
 
         # 輪郭を描画した画像を作成
+        logger.info("ステップ6: 検出した輪郭を可視化")
         contour_img = img.copy()
         cv2.drawContours(contour_img, contours, -1, (0, 255, 0), 3)
 
         # 最大の輪郭を見つける（数独グリッド全体）
+        logger.info("ステップ7: 最大輪郭の検索（数独グリッド全体）")
         max_area = 0
         biggest_contour = None
 
@@ -145,6 +173,7 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
         cv2.drawContours(max_contour_img, [biggest_contour], 0, (0, 0, 255), 3)
 
         if biggest_contour is None:
+            logger.error("数独グリッドを検出できませんでした")
             raise HTTPException(
                 status_code=400, detail="数独グリッドを検出できませんでした"
             )
@@ -195,6 +224,8 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
 
         # 数独グリッドを格納する2次元配列
         sudoku_grid = [[0 for _ in range(9)] for _ in range(9)]
+
+        white_cnt = 0
 
         # 各セルを処理
         for i in range(9):
@@ -268,6 +299,7 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
                 # 空のセルはスキップ（白ピクセルの割合が少ない場合は空と見なす）
                 if white_pixel_ratio < 0.01:
                     sudoku_grid[i][j] = 0
+                    white_cnt += 1
                     continue
 
                 # セルを少しだけ膨張させて数字を太くする（OCR精度向上のため）
@@ -304,24 +336,19 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
                         # 再OCR psm=13: 数字の行認識、oem=3: LSTMニューラルネットワーク
                         result = pytesseract.image_to_string(
                             enhanced_pil,
-                            config="--psm 13 --oem 3 -c tessedit_char_whitelist=123456789",
+                            config="--psm 10 --oem 3 -c tessedit_char_whitelist=123456789",
                         ).strip()
 
                     if result:
-                        # 文字列から直接数値に変換
-                        try:
-                            digit = int(result[0])
-                            if digit >= 1 and digit <= 9:
-                                sudoku_grid[i][j] = digit
-                            else:
-                                sudoku_grid[i][j] = 0
-                        except ValueError:
-                            sudoku_grid[i][j] = 0
+                        # closest_digit関数を使用して最も近い数字を取得
+                        recognized_digit = closest_digit(result[0])
+                        sudoku_grid[i][j] = recognized_digit
                     else:
                         sudoku_grid[i][j] = 0
                 except Exception as e:
                     sudoku_grid[i][j] = 0
 
+        logger.info(f"空のセル数: {white_cnt} / 81")
         # 最終的な認識結果の視覚化
         final_grid = np.zeros((450, 450, 3), dtype=np.uint8)
         final_grid.fill(255)  # 白い背景
@@ -352,12 +379,26 @@ async def extract_sudoku_from_image(file: UploadFile = File(...)):
         # 結果を返す
         result = {"puzzle": sudoku_grid}
 
+        # 処理時間をログに記録
+        process_time = time.time() - start_time
+        logger.info(f"数独画像抽出処理完了: 処理時間={process_time:.2f}秒")
+
         return result
 
     except Exception as e:
+        logger.error(f"画像処理中にエラーが発生しました: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500, detail=f"画像処理中にエラーが発生しました: {str(e)}"
         )
+
+
+def closest_digit(text: str) -> int:
+    """
+    文字列を入力として受け取り、最も近い数字（1-9）を返します
+    """
+    digits = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+    matches = difflib.get_close_matches(text, digits, n=1, cutoff=0.0)
+    return int(matches[0]) if matches else 0
 
 
 # OCR用前処理：リサイズ＋中央寄せ＋パディング付きのキャンバスに配置
