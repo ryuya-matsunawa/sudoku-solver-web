@@ -7,4 +7,3 @@ __pycache__/
 *.sqlite3
 .env
 .venv/
-debug_images/
