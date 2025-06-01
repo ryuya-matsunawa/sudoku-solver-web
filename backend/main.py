@@ -48,6 +48,12 @@ def solve_sudoku(data: SudokuPuzzle):
     """
     puzzle = [row[:] for row in data.puzzle]
 
+    if not is_valid_puzzle(puzzle):
+        raise HTTPException(
+            status_code=400,
+            detail="パズルが数独のルールに違反しています。",
+        )
+
     if solve(puzzle):
         return {"solution": puzzle}
     else:
@@ -55,6 +61,28 @@ def solve_sudoku(data: SudokuPuzzle):
             status_code=400,
             detail="解答が見つかりませんでした。このパズルは解けません。",
         )
+
+
+def is_valid_puzzle(grid):
+    """
+    数独の盤面が有効かどうかをチェックする関数
+    数独のルールに従い、各行、列、3x3のブロックに同じ数字が存在しないかを確認します。
+
+    Args:
+        grid: 数独の盤面を表す9x9のグリッド
+
+    Returns:
+        bool: 盤面が有効な場合はTrue、無効な場合はFalse
+    """
+    for row in range(9):
+        for col in range(9):
+            num = grid[row][col]
+            if num != 0:
+                grid[row][col] = 0  # 一時的に除外してチェック
+                if not is_valid(grid, row, col, num):
+                    return False
+                grid[row][col] = num
+    return True
 
 
 def is_valid(grid, row, col, num):
@@ -80,7 +108,9 @@ def is_valid(grid, row, col, num):
 
     # 3x3のブロックのチェック
     start_row, start_col = 3 * (row // 3), 3 * (col // 3)
-    return all(grid[start_row + i][start_col + j] != num for i in range(3) for j in range(3))
+    return all(
+        grid[start_row + i][start_col + j] != num for i in range(3) for j in range(3)
+    )
 
 
 def solve(grid):
