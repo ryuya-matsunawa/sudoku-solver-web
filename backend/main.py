@@ -48,12 +48,6 @@ def solve_sudoku(data: SudokuPuzzle):
     """
     puzzle = [row[:] for row in data.puzzle]
 
-    if not is_valid_puzzle(puzzle):
-        raise HTTPException(
-            status_code=400,
-            detail="無効な数独パズルです。既に配置されている数字がルールに違反しています。",
-        )
-
     if solve(puzzle):
         return {"solution": puzzle}
     else:
@@ -76,38 +70,17 @@ def is_valid(grid, row, col, num):
     Returns:
         bool: 数字の配置が妥当な場合はTrue、そうでない場合はFalse
     """
-    for i in range(9):
-        if grid[row][i] == num or grid[i][col] == num:
-            return False
+    # 行のチェック
+    if num in grid[row]:
+        return False
+
+    # 列のチェック
+    if num in [grid[i][col] for i in range(9)]:
+        return False
+
+    # 3x3のブロックのチェック
     start_row, start_col = 3 * (row // 3), 3 * (col // 3)
-    for i in range(3):
-        for j in range(3):
-            if grid[start_row + i][start_col + j] == num:
-                return False
-    return True
-
-
-def is_valid_puzzle(grid):
-    """
-    数独パズルが成立しているかどうかを判定する関数
-
-    既に配置されている数字がルールに違反していないかを確認します。
-    この関数は、パズルが解答可能かどうかではなく、
-    現在の状態で矛盾がないかのみをチェックします。
-
-    Args:
-        grid: 数独の盤面を表す9x9のグリッド
-
-    Returns:
-        bool: パズルが成立している場合はTrue、そうでない場合はFalse
-    """
-    # 各セルをチェック
-    for row in range(9):
-        for col in range(9):
-            if grid[row][col] != 0:
-                if not is_valid(grid, row, col, grid[row][col]):
-                    return False
-    return True
+    return all(grid[start_row + i][start_col + j] != num for i in range(3) for j in range(3))
 
 
 def solve(grid):
