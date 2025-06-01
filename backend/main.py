@@ -17,6 +17,13 @@ app.add_middleware(
 
 
 class SudokuPuzzle(BaseModel):
+    """
+    数独パズルを表現するモデルクラス
+
+    Attributes:
+        puzzle: 9x9の数独グリッドを表す二次元配列。0は空白のセルを表す
+    """
+
     puzzle: List[List[int]]
 
 
@@ -27,16 +34,26 @@ def health():
 
 @app.post("/api/solve")
 def solve_sudoku(data: SudokuPuzzle):
+    """
+    数独パズルを解く処理を実行するAPIエンドポイント
+
+    Args:
+        data: 解くべき数独パズルのデータ
+
+    Returns:
+        解答が見つかった場合は解答を含むオブジェクト
+
+    Raises:
+        HTTPException: パズルが無効である場合や解答が存在しない場合に発生
+    """
     puzzle = [row[:] for row in data.puzzle]
 
-    # まず、パズルが有効かどうかを確認
     if not is_valid_puzzle(puzzle):
         raise HTTPException(
             status_code=400,
             detail="無効な数独パズルです。既に配置されている数字がルールに違反しています。",
         )
 
-    # 解けるかどうか試行
     if solve(puzzle):
         return {"solution": puzzle}
     else:
@@ -46,8 +63,19 @@ def solve_sudoku(data: SudokuPuzzle):
         )
 
 
-# --- 解答ロジック（バックトラッキング） ---
 def is_valid(grid, row, col, num):
+    """
+    数独のルールに従って、特定のセルに数字を配置できるかどうかをチェックする関数
+
+    Args:
+        grid: 数独の盤面を表す9x9のグリッド
+        row: 行のインデックス（0-8）
+        col: 列のインデックス（0-8）
+        num: 配置を試みる数字（1-9）
+
+    Returns:
+        bool: 数字の配置が妥当な場合はTrue、そうでない場合はFalse
+    """
     for i in range(9):
         if grid[row][i] == num or grid[i][col] == num:
             return False
@@ -59,26 +87,43 @@ def is_valid(grid, row, col, num):
     return True
 
 
-# 数独パズルが有効かどうかを確認する関数
 def is_valid_puzzle(grid):
-    # すでに配置されている数字がルールに違反していないか確認
+    """
+    数独パズルが成立しているかどうかを判定する関数
+
+    既に配置されている数字がルールに違反していないかを確認します。
+    この関数は、パズルが解答可能かどうかではなく、
+    現在の状態で矛盾がないかのみをチェックします。
+
+    Args:
+        grid: 数独の盤面を表す9x9のグリッド
+
+    Returns:
+        bool: パズルが成立している場合はTrue、そうでない場合はFalse
+    """
+    # 各セルをチェック
     for row in range(9):
         for col in range(9):
-            if grid[row][col] != 0:  # セルに数字がある場合
-                num = grid[row][col]
-                # 一時的にそのセルを0にして
-                grid[row][col] = 0
-                # その位置にその数字を置けるかチェック
-                if not is_valid(grid, row, col, num):
-                    # 元に戻して
-                    grid[row][col] = num
+            if grid[row][col] != 0:
+                if not is_valid(grid, row, col, grid[row][col]):
                     return False
-                # 元に戻す
-                grid[row][col] = num
     return True
 
 
 def solve(grid):
+    """
+    バックトラッキングアルゴリズムを使用して数独パズルを解く再帰関数
+
+    空白のセル（値が0）に1から9までの数字を試し、
+    そのセルに配置可能な数字を見つけたら、次のセルに進みます。
+    全てのセルが埋まったら成功、解が存在しない場合は失敗を返します。
+
+    Args:
+        grid: 数独の盤面を表す9x9のグリッド
+
+    Returns:
+        bool: 解が見つかった場合はTrue、見つからなかった場合はFalse
+    """
     for row in range(9):
         for col in range(9):
             if grid[row][col] == 0:
