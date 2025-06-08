@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     type: 'website',
   },
   other: {
-    'google-site-verification': 'U_pVrCK3QwIG1LPv4awT4Ym2YzWLWK5GsSiWbdhRKFE',
+    'google-site-verification': process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || '',
   },
 }
 
@@ -36,7 +36,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ja">
+      <head>
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"
+          data-ad-client={process.env.NEXT_PUBLIC_GOOGLE_AD_CLIENT || ''}
+          crossOrigin="anonymous"
+        ></script>
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
