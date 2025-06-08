@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     type: 'website',
   },
   other: {
-    'google-site-verification': process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+    'google-site-verification': process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || '',
   },
 }
 
@@ -41,8 +41,8 @@ export default function RootLayout({
         <script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"
-          data-ad-client={process.env.NEXT_PUBLIC_GOOGLE_AD_CLIENT}
-          crossorigin="anonymous"
+          data-ad-client={process.env.NEXT_PUBLIC_GOOGLE_AD_CLIENT || ''}
+          crossOrigin="anonymous"
         ></script>
       </head>
       <body
