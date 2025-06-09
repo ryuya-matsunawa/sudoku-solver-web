@@ -1,7 +1,8 @@
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, conlist
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List
+from typing import List, Dict, Tuple
+import time
 
 app = FastAPI()
 
@@ -41,21 +42,24 @@ def solve_sudoku(data: SudokuPuzzle):
         data: 解くべき数独パズルのデータ
 
     Returns:
-        解答が見つかった場合は解答を含むオブジェクト
+        解答が見つかった場合は解答と処理時間を含むオブジェクト
 
     Raises:
         HTTPException: パズルが無効である場合や解答が存在しない場合に発生
     """
+    start_time = time.time()
     puzzle = [row[:] for row in data.puzzle]
 
-    if not is_valid_puzzle(puzzle):
+    candidates_map = get_candidates_map(puzzle)
+    if candidates_map is None:
         raise HTTPException(
             status_code=400,
             detail="パズルが数独のルールに違反しています。",
         )
 
-    if solve(puzzle):
-        return {"solution": puzzle}
+    if solve_with_candidates(puzzle, candidates_map):
+        execution_time = time.time() - start_time
+        return {"solution": puzzle, "execution_time_seconds": execution_time}
     else:
         raise HTTPException(
             status_code=400,
@@ -63,78 +67,119 @@ def solve_sudoku(data: SudokuPuzzle):
         )
 
 
-def is_valid_puzzle(grid):
+def is_valid(grid, row, col, num):
     """
-    数独の盤面が有効かどうかをチェックする関数
-    数独のルールに従い、各行、列、3x3のブロックに同じ数字が存在しないかを確認します。
+    指定されたセルに数字を配置できるかどうかをチェック
 
     Args:
-        grid: 数独の盤面を表す9x9のグリッド
+        grid: 9x9の数独グリッド
+        row: 行番号 (0-8)
+        col: 列番号 (0-8)
+        num: 配置する数字 (1-9)
 
     Returns:
-        bool: 盤面が有効な場合はTrue、無効な場合はFalse
+        bool: 配置可能ならTrue、そうでなければFalse
     """
+    if num in grid[row]:
+        return False
+    if num in [grid[r][col] for r in range(9)]:
+        return False
+    start_row, start_col = 3 * (row // 3), 3 * (col // 3)
+    return all(
+        grid[start_row + i][start_col + j] != num
+        for i in range(3) for j in range(3)
+    )
+
+
+def get_candidates(grid, row, col):
+    """
+    指定されたセルに配置可能な数字の候補を取得
+
+    Args:
+        grid: 9x9の数独グリッド
+        row: 行番号 (0-8)
+        col: 列番号 (0-8)
+
+    Returns:
+        List[int]: 配置可能な数字のリスト (1-9)
+    """
+    if grid[row][col] != 0:
+        return []
+
+    candidates = set(range(1, 10))
+    candidates -= set(grid[row])
+    candidates -= {grid[r][col] for r in range(9)}
+    start_row, start_col = 3 * (row // 3), 3 * (col // 3)
+    for i in range(3):
+        for j in range(3):
+            candidates.discard(grid[start_row + i][start_col + j])
+    return list(candidates)
+
+
+def get_candidates_map(grid: List[List[int]]) -> Dict[Tuple[int, int], List[int]] | None:
+    """
+    グリッドの各セルに対して候補数字を取得するマップを作成
+
+    Args:
+        grid: 9x9の数独グリッド
+
+    Returns:
+        各セルの座標をキー、候補数字のリストを値とする辞書
+        もし無効な数独パズルであればNoneを返す
+    """
+    candidates_map = {}
     for row in range(9):
         for col in range(9):
             num = grid[row][col]
             if num != 0:
-                grid[row][col] = 0  # 一時的に除外してチェック
+                grid[row][col] = 0
                 if not is_valid(grid, row, col, num):
-                    return False
+                    return None
                 grid[row][col] = num
-    return True
+            else:
+                candidates = get_candidates(grid, row, col)
+                candidates_map[(row, col)] = candidates
+    return candidates_map
 
 
-def is_valid(grid, row, col, num):
+def solve_with_candidates(
+    grid: List[List[int]],
+    candidates_map: Dict[Tuple[int, int], List[int]]
+) -> bool:
     """
-    数独のルールに従って、特定のセルに数字を配置できるかどうかをチェックする関数
+    数独パズルを解くための再帰的なバックトラッキングアルゴリズム
 
     Args:
-        grid: 数独の盤面を表す9x9のグリッド
-        row: 行のインデックス（0-8）
-        col: 列のインデックス（0-8）
-        num: 配置を試みる数字（1-9）
+        grid: 9x9の数独グリッド
+        candidates_map: 各セルの候補数字を含む辞書
 
     Returns:
-        bool: 数字の配置が妥当な場合はTrue、そうでない場合はFalse
+        bool: 解答が見つかった場合はTrue、そうでなければFalse
     """
-    # 行のチェック
-    if num in grid[row]:
-        return False
+    if not candidates_map:
+        return True  # 全てのセルが埋まった
 
-    # 列のチェック
-    if num in [grid[i][col] for i in range(9)]:
-        return False
+    # 候補が最も少ないセルを優先
+    cell = min(candidates_map, key=lambda k: len(candidates_map[k]))
+    row, col = cell
 
-    # 3x3のブロックのチェック
-    start_row, start_col = 3 * (row // 3), 3 * (col // 3)
-    return all(
-        grid[start_row + i][start_col + j] != num for i in range(3) for j in range(3)
-    )
+    for num in candidates_map[cell]:
+        grid[row][col] = num
 
+        # 残りの候補マップを更新
+        new_candidates_map = {}
+        for (r, c), candidates in candidates_map.items():
+            if (r, c) == cell:
+                continue
+            if grid[r][c] == 0:
+                new_list = [n for n in candidates if is_valid(grid, r, c, n)]
+                if not new_list:
+                    break  # 候補がなくなったのでこの分岐は失敗
+                new_candidates_map[(r, c)] = new_list
+        else:
+            if solve_with_candidates(grid, new_candidates_map):
+                return True
 
-def solve(grid):
-    """
-    バックトラッキングアルゴリズムを使用して数独パズルを解く再帰関数
+        grid[row][col] = 0  # 戻す
 
-    空白のセル（値が0）に1から9までの数字を試し、
-    そのセルに配置可能な数字を見つけたら、次のセルに進みます。
-    全てのセルが埋まったら成功、解が存在しない場合は失敗を返します。
-
-    Args:
-        grid: 数独の盤面を表す9x9のグリッド
-
-    Returns:
-        bool: 解が見つかった場合はTrue、見つからなかった場合はFalse
-    """
-    for row in range(9):
-        for col in range(9):
-            if grid[row][col] == 0:
-                for num in range(1, 10):
-                    if is_valid(grid, row, col, num):
-                        grid[row][col] = num
-                        if solve(grid):
-                            return True
-                        grid[row][col] = 0
-                return False
-    return True
+    return False
