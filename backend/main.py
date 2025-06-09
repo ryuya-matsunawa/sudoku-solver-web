@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, conlist
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
+import time
 
 app = FastAPI()
 
@@ -41,11 +42,12 @@ def solve_sudoku(data: SudokuPuzzle):
         data: 解くべき数独パズルのデータ
 
     Returns:
-        解答が見つかった場合は解答を含むオブジェクト
+        解答が見つかった場合は解答と処理時間を含むオブジェクト
 
     Raises:
         HTTPException: パズルが無効である場合や解答が存在しない場合に発生
     """
+    start_time = time.time()
     puzzle = [row[:] for row in data.puzzle]
 
     if not is_valid_puzzle(puzzle):
@@ -55,7 +57,8 @@ def solve_sudoku(data: SudokuPuzzle):
         )
 
     if solve(puzzle):
-        return {"solution": puzzle}
+        execution_time = time.time() - start_time
+        return {"solution": puzzle, "execution_time_seconds": execution_time}
     else:
         raise HTTPException(
             status_code=400,

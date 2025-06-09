@@ -9,6 +9,7 @@ export default function Home() {
   )
   const [solution, setSolution] = useState<number[][] | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [executionTime, setExecutionTime] = useState<number | null>(null)
 
   const samplePuzzle: number[][] = [
     [5, 3, 0, 0, 7, 0, 0, 0, 0],
@@ -25,6 +26,7 @@ export default function Home() {
   const handleSolve = async (grid: number[][]) => {
     try {
       setError(null)
+      setExecutionTime(null)
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/solve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -38,6 +40,7 @@ export default function Home() {
 
       const data = await res.json()
       setSolution(data.solution)
+      setExecutionTime(data.execution_time_seconds)
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(`解答に失敗しました: ${err.message}`)
@@ -76,6 +79,13 @@ export default function Home() {
       {/* エラー表示 */}
       {error && (
         <p className="mt-2 text-red-500 text-sm">{error}</p>
+      )}
+
+      {/* 処理時間表示 */}
+      {executionTime !== null && (
+        <p className="mt-2 text-green-600 font-medium">
+          処理時間: {executionTime.toFixed(3)} 秒
+        </p>
       )}
 
       {/* サンプルとリセット */}
