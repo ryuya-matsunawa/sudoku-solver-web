@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://sudoku-solver-web-kkne.vercel.app/sitemap.xml
+Sitemap: https://sudoku-solver.xyz
