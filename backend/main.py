@@ -6,7 +6,7 @@ import time
 
 app = FastAPI()
 
-origins = ["https://sudoku-solver-web-kkne.vercel.app", "http://localhost:3000"]
+origins = ["https://sudoku-solver.xyz", "http://localhost:3000"]
 
 app.add_middleware(
     CORSMiddleware,
