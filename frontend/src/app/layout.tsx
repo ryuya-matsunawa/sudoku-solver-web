@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: '数独（ナンプレ）自動解答ツール',
     description: '数独（ナンプレ）を手動入力して即解答！スマホでも使える無料Webアプリ。',
-    url: 'https://sudoku-solver-web-kkne.vercel.app',
+    url: 'https://sudoku-solver.xyz',
     siteName: '数独 自動解答ツール',
     locale: 'ja_JP',
     type: 'website',
