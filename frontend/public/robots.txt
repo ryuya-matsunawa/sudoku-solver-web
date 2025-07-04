@@ -1,4 +1,9 @@
+# *
 User-agent: *
 Allow: /
 
-Sitemap: https://sudoku-solver.xyz
+# Host
+Host: https://sudoku-solver.xyz
+
+# Sitemaps
+Sitemap: https://sudoku-solver.xyz/sitemap.xml
